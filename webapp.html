@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Duck Shooting Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            cursor: crosshair;
+            background: skyblue;
+            font-family: sans-serif;
+        }
+
+        #game {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .duck {
+            width: 80px;
+            height: 40px;
+            background: yellow;
+            color: black;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid black;
+            border-radius: 5px;
+            position: absolute;
+            top: 0;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+            animation: textFlap 0.2s infinite alternate; /* Apply animation to the text */
+            transition: transform 0.3s ease-in-out; /* For the falling rotation */
+        }
+
+        @keyframes textFlap {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.05); /* Slightly scale up and down */
+            }
+        }
+
+        .duck.falling {
+            animation: fallDown 0.5s forwards;
+            pointer-events: none; /* Prevent further clicks on falling duck */
+        }
+
+        @keyframes fallDown {
+            0% {
+                transform: rotate(-20deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(200%) rotate(-70deg);
+                opacity: 0;
+            }
+        }
+
+        .crosshair {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 0, 0, 0.7); /* Semi-transparent red */
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, -50%); /* Center on click */
+            pointer-events: none; /* Don't interfere with clicks */
+            z-index: 100;
+            opacity: 0.8;
+        }
+
+        .popup {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border: 2px solid black;
+            font-size: 20px;
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+            z-index: 100;
+        }
+
+        #missed {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+            z-index: 100;
+        }
+        .nav-button {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background-color:rgb(164, 164, 160);
+    color: rgb(250, 247, 247);
+    text-decoration: none;
+    border-radius: 5px;
+  } 
+  .nav-button2 {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background-color:rgb(0, 60, 255);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+    </style>
+</head>
+
+<body>
+    
+    <a href="index.html" class="nav-button">Home</a>
+    <a href="scratch.html" class="nav-button">Scratch</a>
+    <div id="game">
+        <div id="score">Shot 0</div>
+        <div id="missed">Missed: 0</div>
+    </div>
+
+    <div id="startBox" class="popup">
+        <p>Shoot 10 ducks before 10 pass! </p>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="playAgainBox" class="popup">
+        <p>You shot 10 DUCKS!</p>
+        <button onclick="startGame()">Play Again</button>
+        <a href="index.html" class="nav-button2">Go Home</a>
+    </div>
+
+    <div id="gameOverBox" class="popup">
+        <p>Game Over! You missed too many ducks.</p>
+        <button onclick="startGame()">Play Again</button>
+        <a href="index.html">Go Home</a>
+    </div>
+
+    <script>
+        const game = document.getElementById("game");
+        const startBox = document.getElementById("startBox");
+        const playAgainBox = document.getElementById("playAgainBox");
+        const gameOverBox = document.getElementById("gameOverBox");
+        const scoreDisplay = document.getElementById("score");
+        const missedDisplay = document.getElementById("missed");
+
+        let score = 0;
+        let missedDucks = 0;
+        let duckInterval;
+
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+
+        function updateMissedDisplay() {
+            missedDisplay.textContent = `Missed: ${missedDucks}`;
+        }
+
+        function createDuck() {
+            const duck = document.createElement("div");
+            duck.classList.add("duck");
+            duck.textContent = "DUCK";
+
+            const startTop = Math.random() * (window.innerHeight - 60);
+            duck.style.top = startTop + "px";
+            duck.style.left = "-80px";
+
+            game.appendChild(duck);
+
+            let pos = -80;
+            // Even faster duck speed
+            const speed = Math.random() * 3 + 2; // Speed between 2 and 5
+            let currentTop = startTop;
+            const verticalSpeed = (Math.random() - 0.5) * 4; // Increased vertical speed
+
+            let moveDuckInterval = setInterval(() => {
+                pos += speed;
+                duck.style.left = pos + "px";
+
+                // Random vertical movement
+                currentTop += verticalSpeed;
+
+                // Keep ducks within the screen bounds (with a little buffer)
+                if (currentTop < -20 || currentTop > window.innerHeight - 40) {
+                    verticalSpeed *= -1; // Reverse direction
+                }
+
+                duck.style.top = currentTop + "px";
+
+                if (pos > window.innerWidth) {
+                    clearInterval(moveDuckInterval);
+                    duck.remove();
+                    missedDucks++;
+                    updateMissedDisplay();
+                    if (missedDucks >= 10) {
+                        endGame(true); // Game over due to misses
+                    }
+                }
+            }, 16);
+
+            duck.addEventListener("click", (e) => {
+                e.stopPropagation();
+                clearInterval(moveDuckInterval);
+                duck.classList.add("falling"); // Add falling animation class
+                // Create crosshair at the click position
+                createCrosshair(e.clientX, e.clientY);
+                // Remove the duck after the falling animation
+                setTimeout(() => {
+                    duck.remove();
+                }, 500); // Adjust time to match fallDown animation duration
+                score++;
+                updateScoreDisplay();
+                if (score >= 10) {
+                    endGame(false); // Game over due to score
+                }
+            });
+        }
+
+        function createCrosshair(x, y) {
+            const crosshair = document.createElement("div");
+            crosshair.classList.add("crosshair");
+            crosshair.style.left = x + "px";
+            crosshair.style.top = y + "px";
+            game.appendChild(crosshair);
+            // Remove the crosshair after a short delay
+            setTimeout(() => {
+                crosshair.remove();
+            }, 300); // Adjust duration as needed
+        }
+
+        function startGame() {
+            score = 0;
+            missedDucks = 0;
+            updateScoreDisplay();
+            updateMissedDisplay();
+            startBox.style.display = "none";
+            playAgainBox.style.display = "none";
+            gameOverBox.style.display = "none";
+            clearInterval(duckInterval);
+            removeAllDucks();
+            duckInterval = setInterval(createDuck, 600); // Even faster duck spawn
+        }
+
+        function endGame(missedTooMany) {
+            clearInterval(duckInterval);
+            removeAllDucks();
+            if (missedTooMany) {
+                gameOverBox.style.display = "block";
+            } else {
+                playAgainBox.style.display = "block";
+            }
+        }
+
+        function removeAllDucks() {
+            const ducks = document.querySelectorAll(".duck");
+            ducks.forEach(duck => duck.remove());
+        }
+
+        window.onload = () => {
+            startBox.style.display = "block";
+        };
+    </script>
+</body>
+
+</html>
+    
+
+
+
